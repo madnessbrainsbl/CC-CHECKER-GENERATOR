@@ -1,0 +1,35 @@
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+server_log.txt
+
+# Cache files
+bin_cache.json
+fresh_bins.json
+
+# Generated cards
+cards.txt
+lives.txt
+
+# Config with sensitive data (optional, если хотите хранить config.json в git без ключей)
+# config.json
+
