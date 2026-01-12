@@ -1,255 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>💳 ・ CC Checker</title>
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-    />
-    <link rel="stylesheet" href="./assets/main.css?v=8" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="row">
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-          <div class="panel panel-default">
-            <div class="panel-body">
-              <form id="form">
-                <div class="form-group">
-                  <textarea
-                    class="form-control"
-                    id="ccData"
-                    placeholder="49090005276xxxxx|04|2025|896"
-                    required
-                  ></textarea>
-                </div>
-                <div class="button-group-container">
-                  <div class="button-group">
-                    <div id="loadingSpinner" class="spinner-container" style="display: none;">
-                      <div class="spinner"></div>
-                    </div>
-                    <button
-                      type="submit"
-                      id="submitBtn"
-                      class="btn start"
-                      disabled
-                    >
-                      Start
-                    </button>
-                    <button
-                      type="button"
-                      id="stopBtn"
-                      class="btn stop"
-                      disabled
-                    >
-                      Stop
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-generator"
-                      data-toggle="modal"
-                      data-target="#generatorModal"
-                    >
-                      CC Generator
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-          <div class="panel panel-success">
-            <div
-              class="panel-heading"
-              data-toggle="collapse"
-              data-target="#live-panel"
-              style="cursor: pointer"
-            >
-              <h3 class="panel-title live">
-                Live <span class="badge">0</span>
-              </h3>
-            </div>
-            <div id="live-panel" class="panel-body success collapse in"></div>
-          </div>
-          <div class="panel panel-danger">
-            <div
-              class="panel-heading"
-              data-toggle="collapse"
-              data-target="#dead-panel"
-              style="cursor: pointer"
-            >
-              <h3 class="panel-title dead">
-                Dead <span class="badge">0</span>
-              </h3>
-            </div>
-            <div id="dead-panel" class="panel-body danger collapse in"></div>
-          </div>
-          <div class="panel panel-warning">
-            <div
-              class="panel-heading"
-              data-toggle="collapse"
-              data-target="#threeds-panel"
-              style="cursor: pointer"
-            >
-              <h3 class="panel-title threeds">
-                3DS <span class="badge">0</span>
-              </h3>
-            </div>
-            <div
-              id="threeds-panel"
-              class="panel-body warning collapse in"
-            ></div>
-          </div>
-          <div class="panel panel-info">
-            <div
-              class="panel-heading"
-              data-toggle="collapse"
-              data-target="#unknown-panel"
-              style="cursor: pointer"
-            >
-              <h3 class="panel-title unknown">
-                Unknown <span class="badge">0</span>
-              </h3>
-            </div>
-            <div id="unknown-panel" class="panel-body info collapse in"></div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Generator Modal -->
-    <div
-      class="modal fade"
-      id="generatorModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="generatorModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="generatorModalLabel">CC Generator</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💳 ・ CC Checker</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="./assets/main.css?v=10" />
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <form id="form">
+              <div class="form-group">
+                <textarea class="form-control" id="ccData" placeholder="49090005276xxxxx|04|2025|896"
+                  required></textarea>
+              </div>
+              <div class="button-group-container">
+                <div class="button-group">
+                  <div id="loadingSpinner" class="spinner-container" style="display: none;">
+                    <div class="spinner"></div>
+                  </div>
+                  <button type="submit" id="submitBtn" class="btn start" disabled>
+                    Start
+                  </button>
+                  <button type="button" id="stopBtn" class="btn stop" disabled>
+                    Stop
+                  </button>
+                  <button type="button" class="btn btn-generator" data-toggle="modal" data-target="#generatorModal">
+                    CC Generator
+                  </button>
+
+                  <button type="button" id="topBinsBtn" class="btn btn-bins">
+                    Top BINs
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
-          <div class="modal-body">
-            <!-- Generator UI from CC_Gen-main -->
-            <div class="generator-container">
-              <div class="form-group">
-                <label>BIN</label>
-                <input
-                  type="text"
-                  id="genBin"
-                  class="form-control"
-                  placeholder="454456"
-                  maxlength="16"
-                />
-              </div>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label>Month</label>
-                    <select id="genMonth" class="form-control">
-                      <option value="random">Random</option>
-                      <option value="01">01</option>
-                      <option value="02">02</option>
-                      <option value="03">03</option>
-                      <option value="04">04</option>
-                      <option value="05">05</option>
-                      <option value="06">06</option>
-                      <option value="07">07</option>
-                      <option value="08">08</option>
-                      <option value="09">09</option>
-                      <option value="10">10</option>
-                      <option value="11">11</option>
-                      <option value="12">12</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label>Year</label>
-                    <select id="genYear" class="form-control">
-                      <option value="random">Random</option>
-                      <!-- JS will populate years -->
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label>Quantity</label>
-                    <input
-                      type="number"
-                      id="genQuantity"
-                      class="form-control"
-                      value="10"
-                      min="1"
-                      max="100"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label>CVV</label>
-                    <select id="genCvv" class="form-control">
-                      <option value="random">Random</option>
-                      <option value="no">No CVV</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <button id="generateBtn" class="btn btn-primary btn-block">
-                Generate Cards
+        </div>
+        <div class="panel panel-success">
+          <div class="panel-heading"
+            style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="panel-title live" data-toggle="collapse" data-target="#live-panel" style="margin: 0; flex: 1;">
+              Live <span class="badge">0</span>
+            </h3>
+            <div class="live-actions" style="display: flex; gap: 5px;">
+              <button type="button" id="copyLiveBtn" class="btn btn-xs btn-copy" title="Copy LIVE cards">
+                Copy
               </button>
-              <hr style="background-color: #444; margin: 20px 0; border: none; border-top: 1px solid #444;" />
-              <div class="form-group">
-                <label>Generated Cards</label>
-                <textarea
-                  id="genResult"
-                  class="form-control"
-                  rows="10"
-                  readonly
-                ></textarea>
-              </div>
+
             </div>
           </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
-            <button type="button" class="btn btn-success" id="useCardsBtn">
-              Use These Cards
-            </button>
+          <div id="live-panel" class="panel-body success collapse in"></div>
+        </div>
+        <div class="panel panel-danger">
+          <div class="panel-heading"
+            style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="panel-title dead" data-toggle="collapse" data-target="#dead-panel" style="margin: 0; flex: 1;">
+              Dead <span class="badge">0</span>
+            </h3>
+            <div class="dead-actions" style="display: flex; gap: 5px;">
+              <button type="button" id="copyDeadBtn" class="btn btn-xs btn-copy" title="Copy DEAD cards">
+                Copy
+              </button>
+            </div>
           </div>
+          <div id="dead-panel" class="panel-body danger collapse in"></div>
+        </div>
+        <div class="panel panel-warning">
+          <div class="panel-heading"
+            style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="panel-title threeds" data-toggle="collapse" data-target="#threeds-panel"
+              style="margin: 0; flex: 1;">
+              3DS <span class="badge">0</span>
+            </h3>
+            <div class="threeds-actions" style="display: flex; gap: 5px;">
+              <button type="button" id="copyThreedsBtn" class="btn btn-xs btn-copy" title="Copy 3DS cards">
+                Copy
+              </button>
+            </div>
+          </div>
+          <div id="threeds-panel" class="panel-body warning collapse in"></div>
+        </div>
+        <div class="panel panel-info">
+          <div class="panel-heading"
+            style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="panel-title unknown" data-toggle="collapse" data-target="#unknown-panel"
+              style="margin: 0; flex: 1;">
+              Unknown <span class="badge">0</span>
+            </h3>
+            <div class="unknown-actions" style="display: flex; gap: 5px;">
+              <button type="button" id="copyUnknownBtn" class="btn btn-xs btn-copy" title="Copy UNKNOWN cards">
+                Copy
+              </button>
+            </div>
+          </div>
+          <div id="unknown-panel" class="panel-body info collapse in"></div>
         </div>
       </div>
     </div>
-    <div class="footer text-center">
-      <a href="https://madnessbrains.tilda.ws/" target="_blank"
-        >&#169; >©
-        <script>
-          document.write(new Date().getFullYear());
-        </script>
-        MadnessBrains</a
-      >
+  </div>
+
+  <!-- Top BINs Modal -->
+  <div id="topBinsModal" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">Top BINs Manager</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="savedBins">Your Top BINs (Edit Manually):</label>
+            <textarea id="savedBins" class="form-control" style="height: 300px; font-family: 'Courier New', monospace;"
+              placeholder="Enter your favorite BINs here (one per line)..."></textarea>
+            <small class="text-muted">These BINs are saved locally in your browser.</small>
+          </div>
+          <div style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="importDetectedBtn" class="btn btn-info">Import Detected Live BINs</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success" id="saveBinsBtn">Save & Close</button>
+        </div>
+      </div>
     </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-    <script src="https://js.stripe.com/v3/"></script>
-    <script type="text/javascript" src="./assets/index.js?v=6"></script>
-  </body>
+  </div>
+
+  <!-- Generator Modal -->
+  <div class="modal fade" id="generatorModal" tabindex="-1" role="dialog" aria-labelledby="generatorModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="generatorModalLabel">CC Generator</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Generator UI from CC_Gen-main -->
+          <div class="generator-container">
+            <div class="form-group">
+              <label>BIN</label>
+              <input type="text" id="genBin" class="form-control" placeholder="454456" maxlength="16" />
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Month</label>
+                  <select id="genMonth" class="form-control">
+                    <option value="random">Random</option>
+                    <option value="01">01</option>
+                    <option value="02">02</option>
+                    <option value="03">03</option>
+                    <option value="04">04</option>
+                    <option value="05">05</option>
+                    <option value="06">06</option>
+                    <option value="07">07</option>
+                    <option value="08">08</option>
+                    <option value="09">09</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Year</label>
+                  <select id="genYear" class="form-control">
+                    <option value="random">Random</option>
+                    <!-- JS will populate years -->
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Quantity</label>
+                  <input type="number" id="genQuantity" class="form-control" value="10" min="1" max="100" />
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>CVV</label>
+                  <select id="genCvv" class="form-control">
+                    <option value="random">Random</option>
+                    <option value="no">No CVV</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <button id="generateBtn" class="btn btn-primary btn-block">
+              Generate Cards
+            </button>
+            <hr style="background-color: #444; margin: 20px 0; border: none; border-top: 1px solid #444;" />
+            <div class="form-group">
+              <label>Generated Cards</label>
+              <textarea id="genResult" class="form-control" rows="10" readonly></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Close
+          </button>
+          <button type="button" class="btn btn-success" id="useCardsBtn">
+            Use These Cards
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer text-center">
+    <a href="https://t.me/photo_videoart" target="_blank">&#169;
+      <script>
+        document.write(new Date().getFullYear());
+      </script>
+      MadnessBrains
+    </a>
+  </div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script type="text/javascript" src="./assets/index.js?v=10"></script>
+</body>
+
 </html>
