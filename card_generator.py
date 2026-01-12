@@ -18,7 +18,8 @@ ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
 # Hot Dec 2025 non-VBV BINs (avoid Discover - они часто не проходят)
-# Strict selection: только proven hot BINs для high live rate
+# Hot Dec 2025 non-VBV BINs (avoid Discover - they often fail)
+# Strict selection: only proven hot BINs for high live rate
 BASE_BINS = [
     # US Visa BINs (high success rate)
     "426684", "474473", "426176", "479126", "415974",
@@ -28,16 +29,16 @@ BASE_BINS = [
     "455620", "415974",
 ]
 
-# Strict matrix middle patterns (только real patterns из dumps)
-# Vary ТОЛЬКО last 6-8 digits, fix middle для максимального realism
+# Strict matrix middle patterns (only real patterns from dumps)
+# Vary ONLY last 6-8 digits, fix middle for maximum realism
 MIDDLE_PATTERNS = [
-    '',  # No middle (40% chance - больше вариативности в tail)
-    # Real patterns из known dumps (proven)
+    '',  # No middle (40% chance - more variety in tail)
+    # Real patterns from known dumps (proven)
     '10', '20',  # Common increments
-    '1234', '5678',  # Sequential 4-digit (most common в real dumps)
+    '1234', '5678',  # Sequential 4-digit (most common in real dumps)
 ]
 
-# Загружаем конфигурацию для API ключей
+# Load configuration for API keys
 CONFIG = {}
 CONFIG_FILE = 'config.json'
 if os.path.exists(CONFIG_FILE):
@@ -513,9 +514,9 @@ def get_fresh_bins(bins_list, filter_credit=True, filter_countries=None, check_a
                 else:
                     print(f"{i}. ✗ {bin_p} - {bank} - Dead/Burned/Invalid")
                 
-                time.sleep(6)  # Safe delay для binlist.net (10 req/min limit)
+                time.sleep(6)  # Безопасная задержка для binlist.net (лимит 10 req/min)
         else:
-            # Always check via API
+            # Всегда проверяем через API
             valid, bank, country, country_code, scheme, card_type = lookup_bin(bin_p, api_key)
             
             if valid:
@@ -534,7 +535,7 @@ def get_fresh_bins(bins_list, filter_credit=True, filter_countries=None, check_a
             else:
                 print(f"{i}. ✗ {bin_p} - {bank} - Dead/Burned/Invalid")
             
-            time.sleep(6)  # Safe delay для binlist.net (10 req/min limit)
+            time.sleep(6)  # Safe delay for binlist.net (10 req/min limit)
     
     print("-" * 70)
     if not fresh:
@@ -547,8 +548,8 @@ def get_fresh_bins(bins_list, filter_credit=True, filter_countries=None, check_a
 
 def generate_cc_matrix(bin_prefix, middle_pattern='', length=16):
     """
-    Strict matrix generation - vary ТОЛЬКО last 6-8 digits, fix middle из real patterns.
-    Это делает номер максимально "real-like" для issuer pre-check.
+    Strict matrix generation - vary ONLY last 6-8 digits, fix middle from real patterns.
+    This makes the number maximally "real-like" for issuer pre-check.
     """
     if bin_prefix.startswith('3'):
         length = 15  # Amex
@@ -556,21 +557,21 @@ def generate_cc_matrix(bin_prefix, middle_pattern='', length=16):
         length = 16
     
     prefix = str(bin_prefix) + str(middle_pattern)
-    # Tail length: vary ТОЛЬКО последние 6-8 digits (strict matrix)
-    tail_length = length - len(prefix) - 1  # -1 для check digit
+    # Tail length: vary ONLY last 6-8 digits (strict matrix)
+    tail_length = length - len(prefix) - 1  # -1 for check digit
     
     if tail_length < 0:
-        # Если middle слишком длинный, используем только BIN
+        # If middle is too long, use only BIN
         prefix = str(bin_prefix)
         tail_length = length - len(prefix) - 1
     
-    # Ensure tail is 6-8 digits для strict matrix
+    # Ensure tail is 6-8 digits for strict matrix
     if tail_length < 6:
-        # Если tail слишком короткий, уменьшаем middle
+        # If tail is too short, reduce middle
         prefix = str(bin_prefix)
         tail_length = length - len(prefix) - 1
     
-    # Генерируем tail (последние 6-8 digits варьируются - strict matrix)
+    # Generate tail (last 6-8 digits vary - strict matrix)
     tail = ''.join(str(random.randint(0, 9)) for _ in range(tail_length))
     partial = prefix + tail
     check_digit = luhn_checksum(partial)
@@ -584,10 +585,10 @@ def generate_cc(bin_prefix, middle_pattern='', length=16):
 def generate_expiry():
     """
     Generate valid expiration date (only future dates).
-    Super far (4-8 years) для максимального bypass AVS soft flags и premium feel.
+    Super far (4-8 years) for maximum AVS soft flags bypass and premium feel.
     """
     current_year = datetime.now().year
-    # Super far: 4-8 years (не 3-7, для максимального bypass)
+    # Super far: 4-8 years (not 3-7, for maximum bypass)
     year_offset = random.randint(4, 8)
     year = current_year + year_offset
     month = random.randint(1, 12)
@@ -646,7 +647,8 @@ US_LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Mi
 def generate_address_by_bin(bin_prefix):
     """
     Generate address matching BIN country/ZIP для realism.
-    CN BINs → CN ZIP, DE BINs → DE ZIP, US BINs → US ZIP.
+    Generate address matching BIN country/ZIP for realism.
+    CN BINs -> CN ZIP, DE BINs -> DE ZIP, US BINs -> US ZIP.
     Returns: (name, state, zip_code, country)
     """
     bin_str = str(bin_prefix)[:6]
@@ -654,7 +656,7 @@ def generate_address_by_bin(bin_prefix):
     
     if country_info:
         country, state, zip_code = country_info
-        # Генерируем имя в зависимости от страны
+        # Generate name depending on country
         if country == "CN":
             # Chinese names
             first_names = ["Wei", "Ming", "Li", "Zhang", "Wang", "Liu", "Chen", "Yang", "Huang", "Zhao"]
@@ -680,9 +682,9 @@ def generate_address_by_bin(bin_prefix):
 def generate_us_address(issuer_hint=None):
     """
     Generate random US address for billing.
-    Match ZIP с issuer location для realism (Chase → NY ZIP как 10001).
+    Match ZIP with issuer location for realism (Chase -> NY ZIP as 10001).
     """
-    # Определяем issuer по hint или используем default
+    # Define issuer by hint or use default
     issuer_key = "default"
     if issuer_hint:
         hint_lower = issuer_hint.lower()

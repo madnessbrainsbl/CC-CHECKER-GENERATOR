@@ -1,21 +1,25 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+
 body {
   color: #ffffff;
   background-color: #1a1919;
   font-family: "Poppins", sans-serif;
   overflow-x: hidden;
 }
+
 .container {
   width: 800px;
   max-width: 95%;
   margin: 40px auto 60px;
   padding: 0 15px;
 }
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
 .form-group textarea {
   height: 250px;
   border: 1px solid #6246ea;
@@ -28,6 +32,7 @@ body {
   border-radius: 4px;
   resize: none;
 }
+
 .button-group-container {
   display: flex;
   justify-content: center;
@@ -119,10 +124,109 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
 }
+
+.btn-verify {
+  background-color: #9b59b6 !important;
+  min-width: 140px;
+}
+
+.btn-verify:hover {
+  background-color: #7d3c98 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(155, 89, 182, 0.3);
+}
+
+.btn-bins {
+  background-color: #f39c12 !important;
+  min-width: 140px;
+}
+
+.btn-bins:hover:not(:disabled) {
+  background-color: #d68910 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
+}
+
+.btn-bins:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Copy and Use LIVE cards buttons */
+/* Copy buttons */
+.btn-copy {
+  color: white !important;
+  border: none !important;
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+  /* Default fallback */
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-copy:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* Specific panel matching colors - darker shade of panel color */
+.panel-success .btn-copy {
+  background-color: #008966 !important;
+  /* Darker green */
+}
+
+.panel-success .btn-copy:hover {
+  background-color: #007053 !important;
+}
+
+.panel-danger .btn-copy {
+  background-color: #c0392b !important;
+  /* Darker red */
+}
+
+.panel-danger .btn-copy:hover {
+  background-color: #a93226 !important;
+}
+
+.panel-warning .btn-copy {
+  background-color: #d35400 !important;
+  /* Darker orange (pumpkin) */
+}
+
+.panel-warning .btn-copy:hover {
+  background-color: #ba4a00 !important;
+}
+
+.panel-info .btn-copy {
+  background-color: #2980b9 !important;
+  /* Darker blue */
+}
+
+.panel-info .btn-copy:hover {
+  background-color: #2471a3 !important;
+}
+
+.btn-use {
+  background-color: #28a745 !important;
+  color: white !important;
+  border: none !important;
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+}
+
+.btn-use:hover {
+  background-color: #218838 !important;
+  transform: translateY(-1px);
+}
+
+.live-actions {
+  z-index: 10;
+}
+
 .panel {
   background-color: #303030;
   border: 1px solid transparent;
 }
+
 .panel-title {
   color: #fff;
   padding: 10px 15px;
@@ -139,6 +243,7 @@ body {
 .panel-heading .panel-title {
   padding: 12px 15px;
 }
+
 .panel-body.success,
 .panel-body.danger,
 .panel-body.warning,
@@ -187,50 +292,63 @@ body {
   word-break: break-word;
   color: #e0e0e0;
 }
+
 .panel-success {
   border-color: #00bc8c;
 }
+
 .panel-success .panel-heading {
   border: none;
   background-color: #00bc8c;
 }
+
 .panel-danger {
   border-color: #e74c3c;
 }
+
 .panel-danger .panel-heading {
   border: none;
   background-color: #e74c3c;
 }
+
 .panel-warning {
   border-color: #f39c12;
 }
+
 .panel-warning .panel-heading {
   border: none;
   background-color: #f39c12;
 }
+
 .panel-info {
   border-color: #3498db;
 }
+
 .panel-info .panel-heading {
   border: none;
   background-color: #3498db;
 }
-.panel-success > .panel-heading .badge {
+
+.panel-success>.panel-heading .badge {
   color: #00bc8c;
   background-color: #ffffff;
 }
-.panel-danger > .panel-heading .badge {
+
+.panel-danger>.panel-heading .badge {
   color: #e74c3c;
   background-color: #ffffff;
 }
-.panel-warning > .panel-heading .badge {
+
+.panel-warning>.panel-heading .badge {
   color: #f39c12;
   background-color: #ffffff;
 }
-.panel-info > .panel-heading .badge {
+
+.panel-info>.panel-heading .badge {
   color: #3498db;
   background-color: #ffffff;
 }
+
 .panel-body .badge {
   color: #fff;
   margin: 0;
@@ -242,32 +360,41 @@ body {
   letter-spacing: 0.5px;
   display: inline-block;
 }
+
 .badge.badge-success {
   background-color: #00bc8c;
 }
+
 .badge.badge-warning {
   background-color: #f39c12;
 }
+
 .badge.badge-danger {
   background-color: #dc3545;
 }
+
 .badge.badge-info {
   background-color: #3498db;
 }
+
 .footer {
   margin-bottom: 12px;
 }
+
 .footer a {
   color: #ddd0d0;
   text-decoration: none;
 }
+
 ::-webkit-scrollbar {
   width: 5px;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: #6246ea;
   border-radius: 5px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background-color: #442eb3;
 }
@@ -292,7 +419,10 @@ body {
   background-color: #1a1a1a !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: center !important;
+  /* Center the title */
+  position: relative !important;
+  /* For absolute positioning of close btn */
 }
 
 .modal-header .modal-title {
@@ -306,6 +436,9 @@ body {
   opacity: 0.8;
   font-size: 28px;
   line-height: 1;
+  position: absolute !important;
+  right: 20px;
+  top: 15px;
 }
 
 .modal-header .close:hover {
@@ -426,7 +559,7 @@ body {
     max-width: 100%;
     margin-bottom: 15px;
   }
-  
+
   .generator-container .row .col-md-6:last-child {
     margin-bottom: 0;
   }
