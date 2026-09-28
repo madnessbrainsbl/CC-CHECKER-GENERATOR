@@ -36,6 +36,4 @@ All displayed outcomes are fixed fictional examples. Do not enter payment card d
 
 ## License
 
-Copyright © 2026 [Contact Developer](https://t.me/photo_videoart)
-
 Licensed under the Apache License, Version 2.0.
